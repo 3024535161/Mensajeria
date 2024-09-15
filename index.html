@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Avanzado de Mensajería Móvil en Colombia</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.14/lottie.min.js"></script>
+    <style>
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .message-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 200px; /* Ajusta la altura según sea necesario */
+        }
+        #deliveryChart {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 font-sans leading-normal tracking-normal min-h-screen flex items-center justify-center">
+    <div class="container mx-auto p-4 max-w-4xl glass-effect relative">
+        <div class="message-animation" id="messageAnimation"></div>
+        <h1 class="text-5xl font-bold text-center mb-8 text-white animate_animated animate_fadeIn">Simulador Avanzado de Mensajería Móvil en Colombia</h1>
+        
+        <form id="messageForm" class="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4 animate_animated animate_fadeInUp">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="message">
+                    Mensaje:
+                </label>
+                <textarea id="message" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline transition duration-300 ease-in-out" rows="3" placeholder="Escriba su mensaje aquí..."></textarea>
+            </div>
+            
+            <div class="flex flex-wrap -mx-3 mb-4">
+                <div class="w-full md:w-1/2 px-3 mb-6 md:mb-0">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="messageType">
+                        Tipo de Mensaje:
+                    </label>
+                    <div class="relative">
+                        <select id="messageType" class="block appearance-none w-full bg-white border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 transition duration-300 ease-in-out">
+                            <option value="SMS">SMS</option>
+                            <option value="MMS">MMS</option>
+                            <option value="IM">Mensaje Instantáneo</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 px-3">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="messageSize">
+                        Tamaño del Mensaje:
+                    </label>
+                    <input id="messageSize" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline transition duration-300 ease-in-out" type="number" min="1" value="100">
+                    <span id="sizeUnit" class="text-sm text-gray-600">(caracteres)</span>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap -mx-3 mb-4">
+                <div class="w-full md:w-1/3 px-3 mb-6 md:mb-0">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="networkQuality">
+                        Calidad de la Red:
+                    </label>
+                    <div class="relative">
+                        <select id="networkQuality" class="block appearance-none w-full bg-white border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 transition duration-300 ease-in-out">
+                            <option value="buena">Buena</option>
+                            <option value="promedio">Promedio</option>
+                            <option value="mala">Mala</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/3 px-3">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="bandwidth">
+                        Ancho de Banda (Mbps):
+                    </label>
+                    <input id="bandwidth" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline transition duration-300 ease-in-out" type="number" min="1" value="10">
+                </div>
+                <div class="w-full md:w-1/3 px-3">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="latency">
+                        Latencia (ms):
+                    </label>
+                    <input id="latency" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline transition duration-300 ease-in-out" type="number" min="0" value="100">
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <button id="sendButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300 ease-in-out transform hover:scale-105" type="button">
+                    Enviar Mensaje
+                </button>
+            </div>
+        </form>
+        
+        <div id="error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded animate_animated animate_shakeX" style="display: none;" role="alert">
+
+            <p class="font-bold">Error</p>
+
+            <p>Por favor, complete todos los campos correctamente.</p>
+
+        </div>
+
+        
+
+        <div id="success" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded animate_animated animate_fadeInUp" style="display: none;" role="alert">
+
+            <p class="font-bold">Mensaje Enviado</p>
+
+            <p>Su mensaje ha sido enviado exitosamente.</p>
+
+        </div>
+
+        <div class="mt-8 chart-container">
+
+            <canvas id="deliveryChart"></canvas>
+
+            <div id="deliveryTime" class="mt-4 text-center text-white font-semibold">Tiempo de Envío: <span id="timeDisplay">0</span> segundos</div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        // Animación de Lottie para mostrar mientras se envía el mensaje
+
+        var animation = lottie.loadAnimation({
+
+            container: document.getElementById('messageAnimation'),
+
+            renderer: 'svg',
+
+            loop: true,
+
+            autoplay: false,
+
+            path: 'https://assets7.lottiefiles.com/packages/lf20_vf5p9xxc.json' // Asegúrate de que esta URL sea válida
+
+        });
+
+        // Configuración del gráfico
+
+        var ctx = document.getElementById('deliveryChart').getContext('2d');
+
+        var deliveryChart = new Chart(ctx, {
+
+            type: 'line',
+
+            data: {
+
+                labels: [],
+
+                datasets: [{
+
+                    label: 'Tiempo de Envío (s)',
+
+                    data: [],
+
+                    borderColor: 'rgba(255, 99, 132, 1)', // Color de la línea en rojo
+
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+
+                    borderWidth: 2,
+
+                    fill: true,
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                scales: {
+
+                    x: {
+
+                        beginAtZero: true,
+
+                        title: {
+
+                            display: true,
+
+                            text: 'Tiempo (segundos)'
+
+                        }
+
+                    },
+
+                    y: {
+
+                        beginAtZero: true,
+
+                        title: {
+
+                            display: true,
+
+                            text: 'Tiempo de Envío'
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        });
+
+        document.getElementById('sendButton').addEventListener('click', function() {
+
+            // Obtener los valores del formulario
+
+            var message = document.getElementById('message').value;
+
+            var messageType = document.getElementById('messageType').value;
+
+            var messageSize = document.getElementById('messageSize').value;
+
+            var networkQuality = document.getElementById('networkQuality').value;
+
+            var bandwidth = document.getElementById('bandwidth').value;
+
+            var latency = document.getElementById('latency').value;
+
+            // Validar que todos los campos tengan valores correctos
+
+            if (!message || !messageType || !messageSize || !networkQuality || !bandwidth || !latency) {
+
+                document.getElementById('error').style.display = 'block';
+
+                document.getElementById('success').style.display = 'none';
+
+                return;
+
+            } else {
+
+                document.getElementById('error').style.display = 'none';
+
+                document.getElementById('success').style.display = 'block';
+
+            }
+
+            // Simular la animación de envío de mensaje
+
+            animation.play();
+
+            console.log("Mensaje enviado:", { message, messageType, messageSize, networkQuality, bandwidth, latency });
+
+            // Simular el tiempo de entrega según la calidad de red
+
+            var deliveryTime;
+
+            switch (networkQuality) {
+
+                case 'buena':
+
+                    deliveryTime = 1000;
+
+                    break;
+
+                case 'promedio':
+
+                    deliveryTime = 3000;
+
+                    break;
+
+                case 'mala':
+
+                    deliveryTime = 5000;
+
+                    break;
+
+                default:
+
+                    deliveryTime = 1000;
+
+            }
+
+            // Actualizar el tiempo de envío
+
+            let startTime = Date.now();
+
+            let updateInterval = setInterval(() => {
+
+                let elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+
+                document.getElementById('timeDisplay').textContent = elapsedTime;
+
+                if (elapsedTime >= deliveryTime / 1000) {
+
+                    clearInterval(updateInterval);
+
+                }
+
+            }, 1000);
+
+            // Actualizar gráfico
+
+            deliveryChart.data.labels.push(new Date().toLocaleTimeString());
+
+            deliveryChart.data.datasets[0].data.push(deliveryTime / 1000);
+
+            deliveryChart.update();
+
+            // Detener la animación después de la entrega
+
+            setTimeout(function() {
+
+                animation.stop();
+
+                alert('Mensaje entregado con éxito');
+
+            }, deliveryTime);
+
+        });
+
+    </script>
+
+</body>
+
+</html>
